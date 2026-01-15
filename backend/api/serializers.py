@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contact, Product, Cart, CartItem, Category, ProductSpecification, Order, OrderItem, PaymentCard
+from .models import Contact, Product, Cart, CartItem, Category, ProductSpecification, Order, OrderItem, PaymentCard, Review
 
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,10 +20,28 @@ class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     specifications = ProductSpecificationSerializer(many=True, read_only=True)
+    reviews = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'slug', 'description', 'price', 'image_url', 'category', 'category_id', 'in_stock', 'specifications', 'created_at']
+        fields = ['id', 'name', 'slug', 'description', 'price', 'image_url', 'category', 'category_id', 'in_stock', 'specifications', 'reviews', 'average_rating', 'created_at']
+    
+    def get_reviews(self, obj):
+        try:
+            reviews = obj.reviews.all()[:10]  # Ограничиваем количество отзывов для списка
+            return ReviewSerializer(reviews, many=True).data
+        except Exception:
+            return []
+    
+    def get_average_rating(self, obj):
+        try:
+            reviews = obj.reviews.all()
+            if reviews.exists():
+                return round(sum(review.rating for review in reviews) / reviews.count(), 1)
+        except Exception:
+            pass
+        return None
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
@@ -69,3 +87,17 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'user', 'status', 'total_price', 'total_items', 'payment_method', 'payment_card', 'payment_card_id', 'first_name', 'last_name', 'email', 'phone', 'address', 'city', 'postal_code', 'notes', 'items', 'created_at', 'updated_at']
         read_only_fields = ['user', 'status', 'total_price', 'created_at', 'updated_at']
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Review
+        fields = ['id', 'user', 'rating', 'comment', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at']
+    
+    def get_user(self, obj):
+        return {
+            'id': obj.user.id,
+            'username': obj.user.username,
+        }

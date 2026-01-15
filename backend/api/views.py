@@ -7,11 +7,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 import logging
-from .models import Contact, Product, Cart, CartItem, Order, OrderItem, Category, ProductSpecification, PaymentCard
+from .models import Contact, Product, Cart, CartItem, Order, OrderItem, Category, ProductSpecification, PaymentCard, Review
 from .serializers import (
     ContactSerializer, ProductSerializer, CartSerializer, CartItemSerializer,
     OrderSerializer, OrderItemSerializer, CategorySerializer, ProductSpecificationSerializer,
-    PaymentCardSerializer, PaymentCardCreateSerializer
+    PaymentCardSerializer, PaymentCardCreateSerializer, ReviewSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ def contact_view(request):
 @permission_classes([AllowAny])
 def products_view(request):
     category_slug = request.query_params.get('category', None)
-    products = Product.objects.filter(in_stock=True)
+    products = Product.objects.filter(in_stock=True).prefetch_related('reviews', 'reviews__user')
     
     if category_slug:
         products = products.filter(category__slug=category_slug)
@@ -422,3 +422,83 @@ def payment_card_detail_view(request, card_id):
             return Response(PaymentCardSerializer(card).data)
         return Response({"error": "Можно изменить только статус карты по умолчанию"}, 
                        status=status.HTTP_400_BAD_REQUEST)
+
+# Review endpoints
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def product_reviews_view(request, product_id):
+    """Получить все отзывы для товара"""
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    reviews = Review.objects.filter(product=product).order_by('-created_at')
+    serializer = ReviewSerializer(reviews, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_review_view(request, product_id):
+    """Создать отзыв на товар (только если пользователь купил товар)"""
+    user = request.user
+    
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Проверяем, купил ли пользователь этот товар
+    # Разрешаем отзывы для заказов, которые не отменены (pending, processing, shipped, delivered)
+    has_purchased = OrderItem.objects.filter(
+        order__user=user,
+        order__status__in=['pending', 'processing', 'shipped', 'delivered'],
+        product=product
+    ).exists()
+    
+    if not has_purchased:
+        return Response(
+            {"error": "Вы можете оставить отзыв только на товары, которые вы заказали. Убедитесь, что товар находится в ваших заказах."},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    # Проверяем, не оставил ли пользователь уже отзыв
+    existing_review = Review.objects.filter(user=user, product=product).first()
+    if existing_review:
+        return Response(
+            {"error": "Вы уже оставили отзыв на этот товар"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Создаем отзыв
+    serializer = ReviewSerializer(data=request.data)
+    if serializer.is_valid():
+        review = serializer.save(user=user, product=product)
+        return Response(ReviewSerializer(review).data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def review_detail_view(request, review_id):
+    """Обновить или удалить свой отзыв"""
+    user = request.user
+    review = get_object_or_404(Review, id=review_id)
+    
+    # Проверяем, что пользователь является автором отзыва
+    if review.user != user:
+        return Response(
+            {"error": "Вы можете изменять только свои отзывы"},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    if request.method == 'DELETE':
+        review.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    # PUT или PATCH
+    partial = request.method == 'PATCH'
+    serializer = ReviewSerializer(review, data=request.data, partial=partial)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

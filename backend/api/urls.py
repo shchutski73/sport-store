@@ -29,6 +29,11 @@ urlpatterns = [
     path('payment-cards/', views.payment_cards_view, name='payment-cards'),
     path('payment-cards/<int:card_id>/', views.payment_card_detail_view, name='payment-card-detail'),
     
+    # Review endpoints
+    path('products/<int:product_id>/reviews/', views.product_reviews_view, name='product-reviews'),
+    path('products/<int:product_id>/reviews/create/', views.create_review_view, name='create-review'),
+    path('reviews/<int:review_id>/', views.review_detail_view, name='review-detail'),
+    
     # Admin endpoints
     path('admin/products/', views.admin_products_view, name='admin-products'),
     path('admin/products/<int:product_id>/', views.admin_product_detail_view, name='admin-product-detail'),
