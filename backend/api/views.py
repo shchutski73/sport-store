@@ -40,11 +40,8 @@ def register_view(request):
             logger.warning(f"Registration failed: {error_msg} - {username}")
             return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Check for existing email
-        if User.objects.filter(email=email).exists():
-            error_msg = "Email уже существует"
-            logger.warning(f"Registration failed: {error_msg} - {email}")
-            return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+        # Email может быть не уникальным - разрешаем регистрацию с одного email
+        # Check for existing email removed to allow multiple accounts with same email
         
         # Create user
         user = User.objects.create_user(username=username, email=email, password=password)
@@ -99,11 +96,12 @@ def products_view(request):
 @permission_classes([AllowAny])
 def product_detail_view(request, slug):
     # Try to get by slug first, then by ID
+    # Не фильтруем по in_stock, чтобы пользователь мог видеть товар даже если он временно недоступен
     try:
-        product = Product.objects.get(slug=slug, in_stock=True)
+        product = Product.objects.get(slug=slug)
     except Product.DoesNotExist:
         try:
-            product = Product.objects.get(id=int(slug), in_stock=True)
+            product = Product.objects.get(id=int(slug))
         except (Product.DoesNotExist, ValueError):
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
     

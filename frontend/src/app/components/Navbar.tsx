@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
@@ -21,13 +21,33 @@ export function Navbar() {
     { href: '/contacts', label: 'Контакты' },
   ];
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const stopPollingRef = useRef<boolean>(false);
+
   useEffect(() => {
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    stopPollingRef.current = false;
+
     if (isAuthenticated) {
       const fetchCartCount = async () => {
+        // Stop if polling was cancelled
+        if (stopPollingRef.current) {
+          return;
+        }
+
         try {
           const token = localStorage.getItem('access_token');
           if (!token) {
-            console.warn('No access token found');
+            setCartItemsCount(0);
+            stopPollingRef.current = true;
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
             return;
           }
 
@@ -43,26 +63,46 @@ export function Navbar() {
             const count = data.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
             setCartItemsCount(count);
           } else if (response.status === 401) {
-            // Token expired or invalid
-            console.warn('Unauthorized: token may be invalid');
+            // Token expired or invalid - stop polling immediately
             setCartItemsCount(0);
+            stopPollingRef.current = true;
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
+            }
+            // Don't log 401 errors - they're expected when token expires
+            return;
           }
         } catch (error) {
           // Only log error if it's not a network error (which is common if server is down)
           if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            console.debug('Cart API unavailable (server may be down)');
+            // Silently handle network errors
+            setCartItemsCount(0);
           } else {
             console.error('Error fetching cart:', error);
+            setCartItemsCount(0);
           }
-          setCartItemsCount(0);
         }
       };
+      
       fetchCartCount();
       // Refresh cart count periodically
-      const interval = setInterval(fetchCartCount, 5000);
-      return () => clearInterval(interval);
+      intervalRef.current = setInterval(fetchCartCount, 5000);
+      
+      return () => {
+        stopPollingRef.current = true;
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
     } else {
       setCartItemsCount(0);
+      stopPollingRef.current = true;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     }
   }, [isAuthenticated]);
 

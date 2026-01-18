@@ -11,6 +11,9 @@ urlpatterns = [
     # Public endpoints
     path('contact/', views.contact_view, name='contact'),
     path('products/', views.products_view, name='products'),
+    # Review endpoints должны быть ПЕРЕД product-detail, чтобы избежать конфликтов
+    path('products/<int:product_id>/reviews/', views.product_reviews_view, name='product-reviews'),
+    path('products/<int:product_id>/reviews/create/', views.create_review_view, name='create-review'),
     path('products/<str:slug>/', views.product_detail_view, name='product-detail'),
     path('categories/', views.categories_view, name='categories'),
     
@@ -29,9 +32,7 @@ urlpatterns = [
     path('payment-cards/', views.payment_cards_view, name='payment-cards'),
     path('payment-cards/<int:card_id>/', views.payment_card_detail_view, name='payment-card-detail'),
     
-    # Review endpoints
-    path('products/<int:product_id>/reviews/', views.product_reviews_view, name='product-reviews'),
-    path('products/<int:product_id>/reviews/create/', views.create_review_view, name='create-review'),
+    # Review endpoints (remaining)
     path('reviews/<int:review_id>/', views.review_detail_view, name='review-detail'),
     
     # Admin endpoints
