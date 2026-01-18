@@ -1,5 +1,0 @@
-
-CREATE USER landing_user WITH PASSWORD 'Shu0253969';
-CREATE DATABASE landing_db OWNER landing_user;
-GRANT ALL PRIVILEGES ON DATABASE landing_db TO landing_user;
-\q
