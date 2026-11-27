@@ -112,7 +112,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-gray-700 shadow-lg sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="text-2xl font-bold text-orange-600">
@@ -127,8 +127,8 @@ export function Navbar() {
                 href={item.href}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   pathname === item.href
-                    ? 'text-orange-600 bg-orange-50'
-                    : 'text-gray-700 hover:text-orange-600 hover:bg-gray-50'
+                    ? 'text-orange-400 bg-gray-800'
+                    : 'text-gray-200 hover:text-orange-400 hover:bg-gray-800'
                 }`}
               >
                 {item.label}
@@ -138,18 +138,8 @@ export function Navbar() {
             {isAuthenticated && (
               <>
                 <Link
-                  href="/orders"
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname === '/orders'
-                      ? 'text-orange-600 bg-orange-50'
-                      : 'text-gray-700 hover:text-orange-600 hover:bg-gray-50'
-                  }`}
-                >
-                  Мои заказы
-                </Link>
-                <Link
                   href="/cart"
-                  className="relative px-3 py-2 text-gray-700 hover:text-orange-600 transition-colors"
+                  className="relative px-3 py-2 text-gray-200 hover:text-orange-400 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -168,15 +158,24 @@ export function Navbar() {
                 {user?.is_staff && (
                   <Link
                     href="/admin"
-                    className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-orange-600"
+                    className="px-3 py-2 text-sm font-medium text-gray-200 hover:text-orange-400"
                   >
                     Админ
                   </Link>
                 )}
-                <span className="text-sm text-gray-700">{user?.username}</span>
+                <Link
+                  href="/profile"
+                  className={`text-sm font-medium ${
+                    pathname === '/profile'
+                      ? 'text-orange-400'
+                      : 'text-gray-300 hover:text-orange-400'
+                  }`}
+                >
+                  {user?.username}
+                </Link>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-orange-600"
+                  className="px-4 py-2 text-sm font-medium text-gray-200 hover:text-orange-400"
                 >
                   Выйти
                 </button>
@@ -194,7 +193,7 @@ export function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-gray-700 focus:outline-none"
+            className="md:hidden text-gray-200 focus:outline-none"
           >
             <svg
               className="w-6 h-6"
@@ -231,8 +230,8 @@ export function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className={`block px-3 py-2 rounded-md text-base font-medium ${
                   pathname === item.href
-                    ? 'text-orange-600 bg-orange-50'
-                    : 'text-gray-700 hover:text-orange-600 hover:bg-gray-50'
+                    ? 'text-orange-400 bg-gray-800'
+                    : 'text-gray-200 hover:text-orange-400 hover:bg-gray-800'
                 }`}
               >
                 {item.label}
@@ -241,20 +240,9 @@ export function Navbar() {
             {isAuthenticated && (
               <>
                 <Link
-                  href="/orders"
-                  onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    pathname === '/orders'
-                      ? 'text-orange-600 bg-orange-50'
-                      : 'text-gray-700 hover:text-orange-600 hover:bg-gray-50'
-                  }`}
-                >
-                  Мои заказы
-                </Link>
-                <Link
                   href="/cart"
                   onClick={() => setIsOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:text-orange-400 hover:bg-gray-800"
                 >
                   Корзина {cartItemsCount > 0 && `(${cartItemsCount})`}
                 </Link>
@@ -262,12 +250,12 @@ export function Navbar() {
                   <Link
                     href="/admin"
                     onClick={() => setIsOpen(false)}
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:text-orange-400 hover:bg-gray-800"
                   >
                     Админ-панель
                   </Link>
                 )}
-                <div className="px-3 py-2 text-sm text-gray-700">
+                <div className="px-3 py-2 text-sm text-gray-300">
                   {user?.username}
                 </div>
                 <button
@@ -275,7 +263,7 @@ export function Navbar() {
                     handleLogout();
                     setIsOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-orange-600 hover:bg-gray-50"
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:text-orange-400 hover:bg-gray-800"
                 >
                   Выйти
                 </button>

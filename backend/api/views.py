@@ -59,14 +59,42 @@ def register_view(request):
         logger.error(f"Registration error: {error_msg}", exc_info=True)
         return Response({"error": "Произошла ошибка при регистрации. Пожалуйста, попробуйте снова."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
+@api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def user_view(request):
+    user = request.user
+
+    if request.method == 'PATCH':
+        username = request.data.get('username', user.username).strip()
+        email = request.data.get('email', user.email).strip()
+        current_password = request.data.get('current_password', '')
+        new_password = request.data.get('new_password', '')
+
+        if not username:
+            return Response({"error": "Имя пользователя не может быть пустым"}, status=status.HTTP_400_BAD_REQUEST)
+        if not email:
+            return Response({"error": "Email не может быть пустым"}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exclude(id=user.id).exists():
+            return Response({"error": "Имя пользователя уже занято"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if new_password:
+            if not current_password:
+                return Response({"error": "Укажите текущий пароль"}, status=status.HTTP_400_BAD_REQUEST)
+            if not user.check_password(current_password):
+                return Response({"error": "Текущий пароль указан неверно"}, status=status.HTTP_400_BAD_REQUEST)
+            if len(new_password) < 8:
+                return Response({"error": "Новый пароль должен содержать минимум 8 символов"}, status=status.HTTP_400_BAD_REQUEST)
+            user.set_password(new_password)
+
+        user.username = username
+        user.email = email
+        user.save()
+
     return Response({
-        "id": request.user.id,
-        "username": request.user.username,
-        "email": request.user.email,
-        "is_staff": request.user.is_staff
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "is_staff": user.is_staff
     })
 
 @api_view(['POST'])

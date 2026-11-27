@@ -15,6 +15,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -118,11 +119,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  const refreshUser = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${API_URL}/user/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(response.data);
+    } catch (error) {
+      logout();
+    }
+  };
+
   const value: AuthContextType = {
     user,
     login,
     register,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
     loading
   };
