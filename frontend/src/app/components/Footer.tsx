@@ -45,8 +45,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contacts" className="hover:text-orange-600 transition-colors">
-                  Возврат товара
+                <Link href="/faq" className="hover:text-orange-600 transition-colors">
+                  FAQ
                 </Link>
               </li>
             </ul>

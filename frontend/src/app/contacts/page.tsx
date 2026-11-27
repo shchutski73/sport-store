@@ -88,6 +88,24 @@ export default function ContactsPage() {
                 </p>
               </div>
             </div>
+
+            <section className="max-w-4xl mx-auto mt-8">
+              <h2 className="text-2xl font-semibold mb-4 text-gray-900">
+                Мы на карте
+              </h2>
+              <div className="overflow-hidden rounded-lg shadow-lg border border-gray-200 bg-white">
+                <iframe
+                  title="Магазин SportStore на Яндекс.Картах"
+                  src="https://yandex.ru/map-widget/v1/?ll=37.617635%2C55.755821&z=14&l=map&pt=37.617635%2C55.755821%2Cpm2rdl"
+                  width="100%"
+                  height="400"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  className="block border-0"
+                  allowFullScreen
+                />
+              </div>
+            </section>
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-8">
